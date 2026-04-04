@@ -1,107 +1,102 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Cyberbullying Detection</title>
+    <title>Cyberbullying Detector</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
         body {
             background: #0f172a;
-            color: white;
             font-family: 'Segoe UI', sans-serif;
+            color: white;
         }
 
-        .card-custom {
-            background: #1e293b;
-            border-radius: 15px;
+        .main-card {
+            max-width: 600px;
+            margin: 80px auto;
             padding: 30px;
-            box-shadow: 0px 0px 20px rgba(0,0,0,0.5);
+            border-radius: 20px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 25px rgba(0,0,0,0.6);
         }
 
         textarea {
-            width: 100%;
-            height: 120px;
-            border-radius: 10px;
-            border: none;
-            padding: 10px;
-            background: #334155;
-            color: white;
+            background: #1e293b !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 12px;
+            padding: 12px;
         }
 
         textarea::placeholder {
-            color: #cbd5f5;
+            color: #94a3b8;
         }
 
         .btn-custom {
             border-radius: 10px;
         }
 
-        .safe {
-            color: #22c55e;
+        .result {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
         }
 
-        .danger {
-            color: #ef4444;
+        .safe { color: #22c55e; }
+        .danger { color: #ef4444; }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 
 <body>
 
-<!-- 🔝 NAVBAR -->
-<nav class="navbar navbar-dark bg-dark px-4">
-    <span class="navbar-brand">🤖 Cyberbullying Detector</span>
+<div class="main-card">
 
-    <div>
-        <span class="me-3">Welcome, Admin</span>
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <h4>🚨 Cyberbullying AI</h4>
         <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
     </div>
-</nav>
 
-<!-- MAIN CONTENT -->
-<div class="container mt-5 d-flex justify-content-center">
-    <div class="card-custom col-md-6">
+    <!-- FORM -->
+    <form method="POST" enctype="multipart/form-data">
 
-        <h3 class="text-center mb-4">Analyze Comment</h3>
+        <textarea name="comment" class="form-control mb-3" placeholder="Type your message..." required></textarea>
 
-        <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="evidence" class="form-control mb-3">
 
-            <textarea name="comment" placeholder="Type your comment here..." required></textarea>
+        <button type="submit" class="btn btn-primary w-100 btn-custom">
+            🔍 Analyze
+        </button>
 
-            <input type="file" name="evidence" class="form-control mt-3">
+    </form>
 
-            <button type="submit" class="btn btn-primary w-100 mt-3 btn-custom">
-                🚀 Analyze
-            </button>
-        </form>
-
-        <!-- RESULT -->
-        {% if result %}
-            {% if result == "bullying" %}
-                <p class="danger text-center mt-3">
-                    🚫 Cyberbullying Detected <br>
-                    Score: {{ score }}
-                </p>
-            {% else %}
-                <p class="safe text-center mt-3">
-                    ✅ Safe Comment <br>
-                    Score: {{ score }}
-                </p>
-            {% endif %}
+    <!-- RESULT -->
+    {% if result %}
+        {% if result == "bullying" %}
+            <p class="result danger">
+                🚫 Cyberbullying Detected <br>
+                🔥 Score: {{ score }}
+            </p>
+        {% else %}
+            <p class="result safe">
+                ✅ Safe Message <br>
+                😊 Score: {{ score }}
+            </p>
         {% endif %}
+    {% endif %}
 
-        <!-- ACTION BUTTONS -->
-        <div class="mt-4">
-            <a href="/history" class="btn btn-secondary w-100 mb-2">📄 History</a>
-            <a href="/dashboard" class="btn btn-info w-100 mb-2">📊 Dashboard</a>
-        </div>
+    <!-- ACTION BUTTONS -->
+    <a href="/history" class="btn btn-secondary mt-3 w-100">📊 View History</a>
+    <a href="/dashboard" class="btn btn-dark mt-2 w-100">📈 Dashboard</a>
 
-        <a href="https://cybercrime.gov.in" target="_blank">
-            <button class="btn btn-danger w-100 mt-2">🚨 Report</button>
-        </a>
-
-    </div>
 </div>
 
 </body>
