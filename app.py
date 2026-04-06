@@ -1,11 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
 import pickle
 import numpy as np
 from scipy.sparse import hstack
 import sqlite3
 
-# LOGIN IMPORTS
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
 
 # ---------------------------
@@ -33,12 +32,6 @@ vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
 # ---------------------------
 app = Flask(__name__)
 app.secret_key = "secret123"
-
-UPLOAD_FOLDER = "uploads"
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
 
 # ---------------------------
 # LOGIN SETUP
@@ -81,27 +74,29 @@ def check_comment(text):
     return prediction[0], round(toxicity_score, 2)
 
 # ---------------------------
-# HOME
+# HOME (CHAT UI ONLY)
 # ---------------------------
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 @login_required
 def home():
-    result = None
-    score = None
+    return render_template("index.html")
 
-    if request.method == "POST":
-        comment = request.form["comment"]
+# ---------------------------
+# PREDICT (FOR CHAT UI)
+# ---------------------------
+@app.route("/predict", methods=["POST"])
+@login_required
+def predict():
+    data = request.get_json()
+    text = data.get("text", "")
 
-        file = request.files["evidence"]
-        if file and file.filename != "":
-            file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
+    result, score = check_comment(text)
 
-        result, score = check_comment(comment)
+    # Save to DB
+    cursor.execute("INSERT INTO comments VALUES (?, ?, ?)", (text, result, score))
+    conn.commit()
 
-        cursor.execute("INSERT INTO comments VALUES (?, ?, ?)", (comment, result, score))
-        conn.commit()
-
-    return render_template("index.html", result=result, score=score)
+    return jsonify({"result": result, "score": score})
 
 # ---------------------------
 # LOGIN
@@ -113,48 +108,12 @@ def login():
         password = request.form["password"]
 
         if username in users and users[username]["password"] == password:
-            user = User(username)
-            login_user(user)
+            login_user(User(username))
             return redirect(url_for("home"))
         else:
             return "Invalid credentials!"
 
     return render_template("login.html")
-# ---------------------------
-# HISTORY (PROTECTED)
-# ---------------------------
-@app.route("/history")
-@login_required
-def history():
-    cursor.execute("SELECT * FROM comments")
-    data = cursor.fetchall()
-    return render_template("history.html", data=data)
-
-# ---------------------------
-# DASHBOARD (PROTECTED)
-# ---------------------------
-@app.route("/dashboard")
-@login_required
-def dashboard():
-    import plotly.graph_objs as go
-    import plotly.io as pio
-
-    cursor.execute("SELECT result, COUNT(*) FROM comments GROUP BY result")
-    data_count = cursor.fetchall()
-
-    results = [row[0] for row in data_count]
-    counts = [row[1] for row in data_count]
-
-    fig = go.Figure([go.Bar(x=results, y=counts)])
-    fig.update_layout(
-        title="Bullying vs Safe Comments",
-        xaxis_title="Result",
-        yaxis_title="Count"
-    )
-
-    graph_html = pio.to_html(fig, full_html=False)
-
-    return render_template("dashboard.html", graph_html=graph_html)
 
 # ---------------------------
 # LOGOUT
@@ -169,6 +128,5 @@ def logout():
 # RUN
 # ---------------------------
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
